@@ -24,7 +24,8 @@ if (!apiKey) {
 console.log("✅ Google Maps API key is configured");
 
 const allowedOrigins = [
-	"http://localhost:3000", // React default
+	"http://localhost:3000",
+	"https://tour-recommendation-frontend.onrender.com", // React default
 	"http://localhost:3005", // Your current frontend port
 	// Add any other origins you use
 ];

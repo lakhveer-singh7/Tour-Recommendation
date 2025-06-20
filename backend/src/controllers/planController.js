@@ -122,6 +122,16 @@ export const deletePlan = async (req, res) => {
 	}
 };
 
+// Delete all plans for the logged-in user
+export const deleteAllPlans = async (req, res) => {
+	try {
+		await Plan.deleteMany({ user: req.user.userId });
+		res.json({ message: "All plans deleted successfully" });
+	} catch (err) {
+		res.status(500).json({ message: "Failed to delete all plans", error: err.message });
+	}
+};
+
 // Update an existing plan
 export const updatePlan = async (req, res) => {
 	const { id } = req.params;

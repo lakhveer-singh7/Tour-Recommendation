@@ -1,5 +1,5 @@
 import express from "express";
-import { createPlan, getUserPlans, deletePlan, updatePlan } from "../controllers/planController.js";
+import { createPlan, getUserPlans, deletePlan, deleteAllPlans, updatePlan } from "../controllers/planController.js";
 import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
@@ -12,6 +12,9 @@ router.post("/", createPlan);
 
 // Get all saved plans of the logged-in user
 router.get("/", getUserPlans);
+
+// Delete all plans for the logged-in user
+router.delete("/", deleteAllPlans);
 
 // Delete a specific plan by ID
 router.delete("/:id", deletePlan);

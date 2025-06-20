@@ -12,7 +12,7 @@ const SavedTours = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('/api/plan/all');
+      const response = await axios.get('/api/plan');
       setSavedTours(response.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch saved tours');
@@ -70,7 +70,7 @@ const SavedTours = () => {
               onClick={async () => {
                 if (!window.confirm('Are you sure you want to delete ALL your saved tours?')) return;
                 try {
-                  await axios.delete('/api/plan/all');
+                  await axios.delete('/api/plan');
                   fetchSavedTours();
                 } catch (err) {
                   alert('Error deleting all tours: ' + (err.response?.data?.message || err.message));

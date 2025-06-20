@@ -52,7 +52,7 @@ const Dashboard = () => {
 
       try {
         // Fetch User Plans (for stats and recent activities)
-        const plansResponse = await axios.get('/api/plan/all');
+        const plansResponse = await axios.get('/api/plan');
         const plans = plansResponse.data;
         
         let completedCount = 0;

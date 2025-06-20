@@ -1,23 +1,13 @@
 import axios from './axios';
 
-const API_URL = '/api/directions';
-
 export const getDirections = async (originLat, originLng, destinationLat, destinationLng) => {
   try {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (!token) {
-      throw new Error('No authentication token found.');
-    }
-
-    const response = await axios.get(`${API_URL}/directions`, {
+    const response = await axios.get('/api/directions', {
       params: {
         originLat,
         originLng,
         destinationLat,
         destinationLng,
-      },
-      headers: {
-        Authorization: `Bearer ${token}`,
       },
     });
     return response.data;

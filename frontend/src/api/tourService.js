@@ -1,30 +1,28 @@
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL;
+import axios from './axios';
 
 export const tourService = {
   getTours: async () => {
-    const response = await axios.get(`${API_URL}/api/tours`);
+    const response = await axios.get('/api/tours');
     return response.data;
   },
 
   getTourById: async (id) => {
-    const response = await axios.get(`${API_URL}/api/tours/${id}`);
+    const response = await axios.get(`/api/tours/${id}`);
     return response.data;
   },
 
   getRecommendedTours: async () => {
-    const response = await axios.get(`${API_URL}/api/tours/recommended`);
+    const response = await axios.get('/api/tours/recommended');
     return response.data;
   },
 
   saveTour: async (tourId) => {
-    const response = await axios.post(`${API_URL}/api/tours/${tourId}/save`);
+    const response = await axios.post(`/api/tours/${tourId}/save`);
     return response.data;
   },
 
   completeTour: async (tourId) => {
-    const response = await axios.post(`${API_URL}/api/tours/${tourId}/complete`);
+    const response = await axios.post(`/api/tours/${tourId}/complete`);
     return response.data;
   },
 }; 

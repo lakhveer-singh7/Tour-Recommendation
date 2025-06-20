@@ -27,7 +27,7 @@ const Recommendation = () => {
   // Background images
   const banners = [
     'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1476514525535-07d3dc8fabda?q=80&w=2070&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1517732306149-e8f829eb588a?q=80&w=2070&auto=format&fit=crop',
     'https://images.unsplash.com/photo-1501785888041-af3ba6f60060?q=80&w=2070&auto=format&fit=crop',
   ];
 

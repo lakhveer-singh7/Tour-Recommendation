@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiCalendar, FiMapPin, FiClock, FiStar, FiHeart, FiTrash2, FiEye } from 'react-icons/fi';
+import axios from '../api/axios'; // Import custom axios instance
 
 const SavedTours = () => {
   const [savedTours, setSavedTours] = useState([]);
@@ -11,15 +12,10 @@ const SavedTours = () => {
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const response = await fetch('http://localhost:5002/api/plan/all', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch saved tours');
-      const data = await response.json();
-      setSavedTours(data);
+      const response = await axios.get('/api/plan/all');
+      setSavedTours(response.data);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Failed to fetch saved tours');
     } finally {
       setLoading(false);
     }
@@ -32,15 +28,10 @@ const SavedTours = () => {
   const handleDelete = async (planId) => {
     if (!window.confirm('Are you sure you want to delete this tour?')) return;
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const response = await fetch(`http://localhost:5002/api/plan/${planId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to delete tour');
+      await axios.delete(`/api/plan/${planId}`);
       fetchSavedTours(); // Refresh list after delete
     } catch (err) {
-      alert('Error deleting tour: ' + err.message);
+      alert('Error deleting tour: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -79,15 +70,10 @@ const SavedTours = () => {
               onClick={async () => {
                 if (!window.confirm('Are you sure you want to delete ALL your saved tours?')) return;
                 try {
-                  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-                  const response = await fetch('http://localhost:5002/api/plan/all', {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  });
-                  if (!response.ok) throw new Error('Failed to delete all tours');
+                  await axios.delete('/api/plan/all');
                   fetchSavedTours();
                 } catch (err) {
-                  alert('Error deleting all tours: ' + err.message);
+                  alert('Error deleting all tours: ' + (err.response?.data?.message || err.message));
                 }
               }}
               className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-colors"

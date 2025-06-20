@@ -340,7 +340,7 @@ function isRelevantTouristPlace(place) {
 }
 
 import axios from "axios";
-import Place from "../models/place.js";
+import Place from "../models/Place.js";
 import dotenv from "dotenv";
 dotenv.config();
 

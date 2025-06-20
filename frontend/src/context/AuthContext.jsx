@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios'; // Import axios
+import axios from '../api/axios'; // Import the custom axios instance
 import { jwtDecode } from 'jwt-decode'; // Import jwt-decode to safely decode tokens
 
 const AuthContext = createContext();
@@ -22,13 +22,8 @@ export function AuthProvider({ children }) {
             return; // Exit after logout, which sets loading to false
           }
 
-          // Fetch full user profile from backend
-          // Ensure axios instance or direct call is configured to hit http://localhost:5002/api
-          const response = await axios.get('http://localhost:5002/api/auth/profile', { // Explicitly use full URL
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          // Use the custom axios instance which has the correct base URL and auth interceptor
+          const response = await axios.get('/api/auth/profile');
           setUser(response.data);
           console.log("AuthContext: User profile fetched successfully:", response.data.email, "Preferences:", response.data.preferences);
         } catch (error) {
@@ -55,11 +50,8 @@ export function AuthProvider({ children }) {
         console.log("AuthContext: Token saved to sessionStorage.");
       }
       try {
-        const response = await axios.get('http://localhost:5002/api/auth/profile', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // Use the custom axios instance here as well
+        const response = await axios.get('/api/auth/profile');
         setUser(response.data);
         console.log("AuthContext: User profile fetched after login:", response.data.email, "Preferences:", response.data.preferences);
         return;

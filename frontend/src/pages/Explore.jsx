@@ -3,11 +3,9 @@ import { FiSearch, FiMapPin, FiStar, FiFilter, FiCompass, FiLoader, FiClock } fr
 import { FaDirections } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext'; // Import useAuth
-import axios from 'axios'; // Import axios for backend calls
+import axios from '../api/axios'; // Import custom axios instance
 import { getDirections } from '../api/directions'; // Import getDirections
 import { GoogleMap, Marker, useLoadScript } from '@react-google-maps/api'; // Import Google Map components
-
-const API_URL = 'http://localhost:5002/api'; // Your backend API URL
 
 const mapContainerStyle = {
   width: '100%',
@@ -141,25 +139,15 @@ const Explore = () => {
 
       setLoading(true);
       setError(null);
-      let token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      
-      if (!token) {
-        setError('Authentication token missing. Please log in.');
-        setLoading(false);
-        return;
-      }
 
       try {
         const userPreferences = user?.preferences || [];
-        const response = await axios.get(`${API_URL}/places/nearby`, {
+        const response = await axios.get('/api/places/nearby', {
           params: {
             latitude: currentLatLng.lat,
             longitude: currentLatLng.lng,
             radius: radius,
             preferences: JSON.stringify(userPreferences),
-          },
-          headers: {
-            Authorization: `Bearer ${token}`,
           },
         });
 

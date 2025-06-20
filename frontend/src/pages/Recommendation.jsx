@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaSortAmountDownAlt, FaMapMarkerAlt, FaClock, FaInfoCircle, FaTimesCircle, FaRoute } from 'react-icons/fa';
 import { FiLoader } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import axios from '../api/axios'; // Import custom axios instance
 
 const API_URL = 'http://localhost:5002/api';
 
@@ -59,35 +60,20 @@ const Recommendation = () => {
       try {
         setLoadingPlaces(true);
         setError(null);
-        let token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        if (!token) {
-          setError('Authentication token missing. Please log in.');
-          setLoadingPlaces(false);
-          return;
-        }
-        const params = new URLSearchParams({
-          lat: userLocation.lat,
-          lng: userLocation.lng,
-          radius: 50000, // Always use 50km
-          limit: 30
+        
+        const response = await axios.get('/api/recommend/hybrid/location', {
+          params: {
+            lat: userLocation.lat,
+            lng: userLocation.lng,
+            radius: 50000,
+            limit: 30
+          }
         });
-        const response = await fetch(`${API_URL}/recommend/hybrid/location?${params.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(
-            (errData.error ? errData.error + ' ' : '') +
-            (errData.message || 'Failed to fetch recommendations')
-          );
-        }
-        const data = await response.json();
-        setPlaces(data.recommended || []);
+        
+        setPlaces(response.data.recommended || []);
       } catch (err) {
         console.error('Error fetching recommendations:', err);
-        setError(err.message);
+        setError(err.response?.data?.message || 'Failed to fetch recommendations.');
       } finally {
         setLoadingPlaces(false);
       }
@@ -128,24 +114,13 @@ const Recommendation = () => {
     setError(null);
     setInfoMessage("");
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const response = await fetch(`${API_URL}/plan/optimize`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          origin: userLocation,
-          destinations: selectedPlaces,
-          optimize: shouldSort
-        })
+      const response = await axios.post('/api/plan/optimize', {
+        origin: userLocation,
+        destinations: selectedPlaces,
+        optimize: shouldSort
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to plan trip');
-      }
-      const result = await response.json();
+      
+      const result = response.data;
       setSortedPlaces(result.plan || []);
       setIsSorted(shouldSort);
       setTripPlanned(true);
@@ -177,7 +152,7 @@ const Recommendation = () => {
         );
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Failed to plan trip');
     } finally {
       setLoadingSort(false);
     }
@@ -187,7 +162,6 @@ const Recommendation = () => {
     setSaveSuccess(false);
     setSaveError(null);
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       // Calculate totalTime in minutes
       const totalTime = sortedPlaces.reduce((sum, p) => sum + (p.staySec ? p.staySec / 60 : 0), 0);
       // Create a text summary of the trip plan (as shown in Your Trip Plan)
@@ -213,24 +187,17 @@ const Recommendation = () => {
           arrivalSec: p.arrivalSec || 0
         };
       });
-      const response = await fetch('http://localhost:5002/api/plan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          sourceLocation: userLocation,
-          selectedPlaces: selectedPlacesPayload,
-          totalTime,
-          isSorted: isSorted,
-          summary: tripSummary
-        })
+      await axios.post('/api/plan', {
+        sourceLocation: userLocation,
+        selectedPlaces: selectedPlacesPayload,
+        totalTime,
+        isSorted: isSorted,
+        summary: tripSummary
       });
-      if (!response.ok) throw new Error('Failed to save tour');
+
       setSaveSuccess(true);
     } catch (err) {
-      setSaveError(err.message);
+      setSaveError(err.response?.data?.message || 'Failed to save tour');
     }
   };
 

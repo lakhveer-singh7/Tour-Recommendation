@@ -1,6 +1,6 @@
 import axios from './axios';
 
-const API_URL = '/directions';
+const API_URL = '/api/directions';
 
 export const getDirections = async (originLat, originLng, destinationLat, destinationLng) => {
   try {

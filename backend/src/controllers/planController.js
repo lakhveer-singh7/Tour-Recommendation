@@ -164,12 +164,30 @@ export const optimizePlan = async (req, res) => {
 	}
 
 	try {
-		// This is a placeholder for your actual optimization logic,
-		// which might involve calling the TSP service and calculating times.
-		// For now, we will just return the plan as is, or sorted.
-		let plan = destinations;
+		// Data normalization: Ensure all destinations have a `location` property
+		const normalizedDestinations = destinations.map(dest => {
+			if (dest.location && dest.location.lat && dest.location.lng) {
+				return dest;
+			}
+			// Fallback for different possible location structures
+			if (dest.geometry && dest.geometry.lat && dest.geometry.lng) {
+				return { ...dest, location: { lat: dest.geometry.lat, lng: dest.geometry.lng } };
+			}
+			if (dest.lat && dest.lng) {
+				return { ...dest, location: { lat: dest.lat, lng: dest.lng } };
+			}
+			// If location cannot be determined, it will cause an error downstream, which is caught below
+			return dest;
+		});
+
+		let plan = normalizedDestinations;
 		if (optimize) {
-			plan = await sortPlacesTSP(origin, destinations);
+			// Check again after normalization
+			const invalidDest = normalizedDestinations.find(d => !d.location?.lat || !d.location?.lng);
+			if (invalidDest) {
+				return res.status(400).json({ message: `Destination "${invalidDest.name || 'unnamed'}" is missing required location data.` });
+			}
+			plan = await sortPlacesTSP(origin, normalizedDestinations);
 		}
 
 		// Placeholder for time details

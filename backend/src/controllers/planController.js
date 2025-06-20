@@ -164,6 +164,9 @@ export const optimizePlan = async (req, res) => {
 	}
 
 	try {
+		// Data normalization for ORIGIN
+		const normalizedOrigin = (origin.location && origin.location.lat) ? origin : { location: { lat: origin.lat, lng: origin.lng } };
+
 		// Data normalization: Ensure all destinations have a `location` property
 		const normalizedDestinations = destinations.map(dest => {
 			if (dest.location && dest.location.lat && dest.location.lng) {
@@ -187,7 +190,7 @@ export const optimizePlan = async (req, res) => {
 			if (invalidDest) {
 				return res.status(400).json({ message: `Destination "${invalidDest.name || 'unnamed'}" is missing required location data.` });
 			}
-			plan = await sortPlacesTSP(origin, normalizedDestinations);
+			plan = await sortPlacesTSP(normalizedOrigin, normalizedDestinations);
 		}
 
 		// Placeholder for time details

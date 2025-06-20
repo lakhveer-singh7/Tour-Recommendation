@@ -155,3 +155,35 @@ export const updatePlan = async (req, res) => {
 		res.status(500).json({ message: "Failed to update plan", error: err.message });
 	}
 };
+
+export const optimizePlan = async (req, res) => {
+	const { origin, destinations, optimize } = req.body;
+
+	if (!origin || !destinations || destinations.length === 0) {
+		return res.status(400).json({ message: "Origin and destinations are required." });
+	}
+
+	try {
+		// This is a placeholder for your actual optimization logic,
+		// which might involve calling the TSP service and calculating times.
+		// For now, we will just return the plan as is, or sorted.
+		let plan = destinations;
+		if (optimize) {
+			plan = await sortPlacesTSP(origin, destinations);
+		}
+
+		// Placeholder for time details
+		const timeDetails = {
+			returnTripMin: 120,
+			avgStayTimeMin: 60,
+			totalDurationMin: 180,
+			estimatedStartTime: "09:00 AM",
+			estimatedEndTime: "12:00 PM",
+		};
+
+		res.json({ plan, timeDetails });
+	} catch (err) {
+		console.error("❌ Failed to optimize plan:", err.message);
+		res.status(500).json({ message: "Server error during plan optimization", error: err.message });
+	}
+};

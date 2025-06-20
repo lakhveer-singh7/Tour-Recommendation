@@ -1,11 +1,14 @@
 import express from "express";
-import { createPlan, getUserPlans, deletePlan, deleteAllPlans, updatePlan } from "../controllers/planController.js";
+import { createPlan, getUserPlans, deletePlan, deleteAllPlans, updatePlan, optimizePlan } from "../controllers/planController.js";
 import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(authMiddleware);
+
+// Optimize a trip plan
+router.post("/optimize", optimizePlan);
 
 // Create a new day plan
 router.post("/", createPlan);

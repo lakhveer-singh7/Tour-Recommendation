@@ -4,27 +4,27 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 export const tourService = {
   getTours: async () => {
-    const response = await axios.get(`${API_URL}/tours`);
+    const response = await axios.get(`${API_URL}/api/tours`);
     return response.data;
   },
 
   getTourById: async (id) => {
-    const response = await axios.get(`${API_URL}/tours/${id}`);
+    const response = await axios.get(`${API_URL}/api/tours/${id}`);
     return response.data;
   },
 
   getRecommendedTours: async () => {
-    const response = await axios.get(`${API_URL}/tours/recommended`);
+    const response = await axios.get(`${API_URL}/api/tours/recommended`);
     return response.data;
   },
 
   saveTour: async (tourId) => {
-    const response = await axios.post(`${API_URL}/tours/${tourId}/save`);
+    const response = await axios.post(`${API_URL}/api/tours/${tourId}/save`);
     return response.data;
   },
 
   completeTour: async (tourId) => {
-    const response = await axios.post(`${API_URL}/tours/${tourId}/complete`);
+    const response = await axios.post(`${API_URL}/api/tours/${tourId}/complete`);
     return response.data;
   },
 }; 

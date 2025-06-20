@@ -141,125 +141,146 @@ export const hybridRecommendWithLocation = async ({
 	radius = 5000,
 	limit = 5,
 }) => {
-	const user = await User.findById(userId);
-	if (!user) throw new Error("User not found");
+	console.log(`Starting hybrid recommendation for user ${userId} at [${lat}, ${lng}] with radius ${radius}m`);
 
-	const placeTypesPref = expandPreferenceTypes(user.preferences || []);
+	try {
+		const user = await User.findById(userId);
+		if (!user) throw new Error("User not found");
 
-	/* ---------------- CF PREP ---------------- */
-	const plans = await Plan.find();
-	const userVisits = {};
-	const allPlaceIds = new Set();
+		const placeTypesPref = expandPreferenceTypes(user.preferences || []);
+		console.log("User preferences expanded to:", placeTypesPref);
 
-	plans.forEach((plan) => {
-		const uid = plan.user.toString();
-		userVisits[uid] ??= new Set();
-		plan.selectedPlaces.forEach((entry) => {
-			if (entry.place?.placeId) {
-				userVisits[uid].add(entry.place.placeId);
-				allPlaceIds.add(entry.place.placeId);
-			}
-		});
-	});
-
-	const allPlaceArr = [...allPlaceIds];
-	const currentUserVec = allPlaceArr.map((pid) => (userVisits[userId]?.has(pid) ? 1 : 0));
-
-	const cfScores = new Map();
-	Object.entries(userVisits).forEach(([uid, visited]) => {
-		if (uid === userId) return;
-		const vec = allPlaceArr.map((pid) => (visited.has(pid) ? 1 : 0));
-		const sim = similarity.cosine(currentUserVec, vec);
-		visited.forEach((pid) => {
-			if (!userVisits[userId]?.has(pid)) {
-				cfScores.set(pid, (cfScores.get(pid) || 0) + sim);
-			}
-		});
-	});
-
-	/* ---------------- CB + LOCATION ---------------- */
-	const placeDocs = await Place.find();
-	const cbScores = new Map();
-	const location = { lat, lng };
-
-	// Convert radius from meters to kilometers
-	const radiusKm = radius / 1000;
-
-	let nearbyPlaces = placeDocs.filter((p) => {
-		if (!p.location || !p.placeId) {
-			console.error('Skipping place with missing location or placeId:', p);
-			return false;
-		}
-		return haversine(location, p.location) <= radiusKm;
-	});
-
-	console.log('Nearby places count:', nearbyPlaces.length, 'for radius', radiusKm, 'km');
-
-	// If no places found, try to seed new places
-	if (nearbyPlaces.length === 0) {
-		console.log("🌍 Auto‑seeding new city from Geoapify…");
-		// Check for Google API key
-		if (!process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_API_KEY === "no") {
-			throw new Error("Google Maps API key is missing. Cannot seed new places.");
-		}
+		/* ---------------- CF PREP ---------------- */
+		let cfScores = new Map();
 		try {
-			const seeded = await seedPlaces({
-				lat,
-				lng,
-				city: user.location?.city || "Unknown",
-				preferences: user.preferences || [],
+			const plans = await Plan.find();
+			const userVisits = {};
+			const allPlaceIds = new Set();
+
+			plans.forEach((plan) => {
+				const uid = plan.user.toString();
+				userVisits[uid] ??= new Set();
+				plan.selectedPlaces.forEach((entry) => {
+					if (entry.place?.placeId) {
+						userVisits[uid].add(entry.place.placeId);
+						allPlaceIds.add(entry.place.placeId);
+					}
+				});
 			});
-			if (Array.isArray(seeded) && seeded.length > 0) {
-				nearbyPlaces = seeded;
+
+			if (Object.keys(userVisits).length > 1 && userVisits[userId]) {
+				const allPlaceArr = [...allPlaceIds];
+				const currentUserVec = allPlaceArr.map((pid) => (userVisits[userId]?.has(pid) ? 1 : 0));
+
+				Object.entries(userVisits).forEach(([uid, visited]) => {
+					if (uid === userId) return;
+					const vec = allPlaceArr.map((pid) => (visited.has(pid) ? 1 : 0));
+					const sim = similarity.cosine(currentUserVec, vec);
+					if (sim > 0) {
+						visited.forEach((pid) => {
+							if (!userVisits[userId]?.has(pid)) {
+								cfScores.set(pid, (cfScores.get(pid) || 0) + sim);
+							}
+						});
+					}
+				});
+				console.log(`CF scores calculated for ${cfScores.size} places.`);
 			} else {
-				throw new Error("No places found via seeding. Please try a different location or check your API key.");
+				console.log("Not enough data for Collaborative Filtering. Skipping.");
 			}
-		} catch (error) {
-			throw new Error(`Auto-seed failed: ${error.message}`);
+		} catch (cfError) {
+			console.error("Error during Collaborative Filtering stage:", cfError);
+			// Continue without CF scores if this stage fails
+		}
+
+		/* ---------------- CB + LOCATION ---------------- */
+		const placeDocs = await Place.find();
+		const location = { lat, lng };
+		const radiusKm = radius / 1000;
+
+		let nearbyPlaces = placeDocs.filter((p) => {
+			if (!p.location?.lat || !p.location?.lng) return false;
+			return haversine(location, p.location) <= radiusKm;
+		});
+
+		console.log(`Found ${nearbyPlaces.length} places within ${radiusKm}km.`);
+
+		if (nearbyPlaces.length < limit && nearbyPlaces.length < 20) {
+			console.log("Not enough nearby places in DB. Auto-seeding from Geoapify...");
+			try {
+				const seeded = await seedPlaces({ lat, lng, radius, types: placeTypesPref });
+				if (seeded.length > 0) {
+					console.log(`Seeded ${seeded.length} new places. Re-filtering...`);
+					const allPlaces = await Place.find();
+					nearbyPlaces = allPlaces.filter(p => haversine(location, p.location) <= radiusKm);
+					console.log(`Found ${nearbyPlaces.length} places after seeding.`);
+				}
+			} catch (seedError) {
+				console.error("Error during auto-seeding:", seedError);
+			}
+		}
+		
+		const finalScores = new Map();
+		const weightCF = cfScores.size > 0 ? 0.5 : 0;
+		const weightCB = 1 - weightCF;
+
+		for (const place of nearbyPlaces) {
+			const pid = place.placeId;
+			const cf = cfScores.get(pid) || 0;
+			
+			let cb = 0;
+			if (placeTypesPref.length && place.types) {
+				const matchCount = place.types.filter(t => placeTypesPref.includes(t)).length;
+				cb = matchCount / placeTypesPref.length;
+			}
+
+			const score = (weightCF * cf) + (weightCB * cb) + (place.rating / 10); // Add rating bonus
+			if (score > 0) {
+				finalScores.set(pid, { score, place });
+			}
+		}
+		
+		let recommended = [...finalScores.values()]
+			.sort((a, b) => b.score - a.score)
+			.map((p) => p.place)
+			.slice(0, limit);
+
+		// Fallback if no recommendations found
+		if (recommended.length === 0) {
+			console.log("No recommendations from hybrid model. Falling back to top-rated nearby places.");
+			recommended = nearbyPlaces
+				.filter(p => matchesPreference(p, placeTypesPref))
+				.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+				.slice(0, limit);
+		}
+		
+		if (recommended.length === 0 && nearbyPlaces.length > 0) {
+			console.log("Still no recommendations. Returning top-rated nearby places regardless of preference.");
+			recommended = nearbyPlaces
+				.sort((a, b) => (b.rating || 0) - (a.rating || 0))
+				.slice(0, limit);
+		}
+		
+		console.log(`Returning ${recommended.length} recommended places.`);
+		return recommended;
+
+	} catch (error) {
+		console.error(`Fatal error in hybridRecommendWithLocation for user ${userId}:`, error);
+		// Ultimate fallback: return any nearby places matching preferences
+		try {
+			const location = { lat, lng };
+			const radiusKm = radius / 1000;
+			const allPlaces = await Place.find();
+			const nearby = allPlaces.filter(p => haversine(location, p.location) <= radiusKm);
+			const user = await User.findById(userId);
+			const prefs = expandPreferenceTypes(user.preferences || []);
+			return nearby
+				.filter(p => matchesPreference(p, prefs))
+				.sort((a,b) => (b.rating || 0) - (a.rating || 0))
+				.slice(0, limit);
+		} catch (fallbackError) {
+			console.error("Error in ultimate fallback:", fallbackError);
+			return []; // Return empty if everything fails
 		}
 	}
-
-	for (const place of nearbyPlaces) {
-		if (!place.placeId || !place.types) {
-			console.error('Skipping place in scoring with missing placeId or types:', place);
-			continue;
-		}
-		let score = 0;
-		const match = place.types.filter((t) => placeTypesPref.includes(t));
-		score = match.length / placeTypesPref.length;
-		cbScores.set(place.placeId, score);
-	}
-
-	/* ---------------- Combine scores ---------------- */
-	const finalScores = new Map();
-	const hasHistory = !!userVisits[userId]?.size;
-	const weightCF = hasHistory ? 0.7 : 0; // cold‑start: ignore CF
-	const weightCB = hasHistory ? 0.3 : 1; // rely fully on CB if no history
-
-	for (const place of nearbyPlaces) {
-		if (!place.placeId) continue;
-		const pid = place.placeId;
-		const cf = cfScores.get(pid) || 0;
-		const cb = cbScores.get(pid) || 0;
-		const score = weightCF * cf + weightCB * cb;
-		if (score > 0) finalScores.set(pid, { score, place });
-	}
-
-	let ranked =
-		finalScores.size > 0
-			? [...finalScores.values()].sort((a, b) => b.score - a.score)
-			: nearbyPlaces
-					.map((p) => ({ place: p, rating: p.rating || 0 }))
-					.sort((a, b) => b.rating - a.rating);
-
-	let filteredRanked =
-		ranked
-			.map((x) => x.place)
-			.filter((place) => place && place.placeId && place.types && (placeTypesPref.length === 0 || matchesPreference(place, placeTypesPref)));
-
-	if (filteredRanked.length === 0) {
-		throw new Error("No recommended places found for this area. Try expanding your search radius or check your preferences/API key.");
-	}
-
-	return filteredRanked.slice(0, limit);
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from '../api/axios'; // Use your custom axios instance
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -16,7 +17,6 @@ import {
 } from 'react-icons/fa';
 import { FiActivity } from 'react-icons/fi';
 import { RiDashboardFill } from 'react-icons/ri';
-import axios from 'axios'; // Import axios for API calls
 import LoadingSpinner from "../components/LoadingSpinner"; // Assuming you have this component
 import ErrorMessage from "../components/ErrorMessage"; // Assuming you have this component
 import { Link } from 'react-router-dom';
@@ -49,20 +49,10 @@ const Dashboard = () => {
 
       setLoading(true);
       setError(null); 
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      if (!token) {
-        setError("Authentication token not found.");
-        setLoading(false);
-        return;
-      }
 
       try {
         // Fetch User Plans (for stats and recent activities)
-        const plansResponse = await axios.get('http://localhost:5002/api/plan/all', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const plansResponse = await axios.get('/api/plan/all');
         const plans = plansResponse.data;
         
         let completedCount = 0;
@@ -93,11 +83,7 @@ const Dashboard = () => {
         setRecentActivities(activities.slice(0, 3)); 
 
         // Fetch Recommended Tours (Places)
-        const recommenderResponse = await axios.get('http://localhost:5002/api/recommend/hybrid', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const recommenderResponse = await axios.get('/api/recommend/hybrid');
         // Transform backend place object to frontend tour structure
         const transformedRecommendations = recommenderResponse.data.recommended.map(place => ({
           id: place.placeId,
@@ -127,13 +113,8 @@ const Dashboard = () => {
       setLoadingUsers(true);
       setUserError(null);
       try {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const response = await fetch('http://localhost:5002/api/auth/users', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Failed to fetch users');
-        const data = await response.json();
-        setUsers(data);
+        const response = await axios.get('/api/auth/users');
+        setUsers(response.data);
       } catch (err) {
         setUserError(err.message);
       } finally {

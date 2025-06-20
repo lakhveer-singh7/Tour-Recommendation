@@ -1,4 +1,4 @@
-import Place from "../models/place.js";
+import Place from "../models/Place.js";
 
 // Haversine formula
 const haversine = (a, b) => {

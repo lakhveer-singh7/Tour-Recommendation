@@ -28,8 +28,8 @@ export const createPlan = async (req, res) => {
 	try {
 		const { sourceLocation, selectedPlaces, totalTime, isSorted = false } = req.body;
 
-		if (!sourceLocation || !selectedPlaces || !totalTime) {
-			return res.status(400).json({ message: "Missing required fields" });
+		if (!sourceLocation || !selectedPlaces || typeof totalTime !== 'number') {
+			return res.status(400).json({ message: "Missing required fields: sourceLocation, selectedPlaces, and totalTime (must be a number) are required." });
 		}
 
 		// Ensure all places exist

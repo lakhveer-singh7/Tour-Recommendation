@@ -26,20 +26,24 @@ export const sortPlacesTSP = async (sourceLocation, selectedPlaces) => {
 	const unvisited = [...selectedPlaces];
 	const sorted = [];
 
-	let current = sourceLocation;
+	let current = sourceLocation.location;
 
 	while (unvisited.length > 0) {
-		let nearestIndex = 0;
+		let nearestIndex = -1;
 		let nearestDist = Infinity;
 
 		for (let i = 0; i < unvisited.length; i++) {
 			const place = places.find((p) => p.placeId === unvisited[i].place);
-			if (!place) continue;
+			if (!place || !place.location) continue;
 			const dist = haversine(current, place.location);
 			if (dist < nearestDist) {
 				nearestDist = dist;
 				nearestIndex = i;
 			}
+		}
+
+		if (nearestIndex === -1) {
+			break;
 		}
 
 		sorted.push(unvisited[nearestIndex]);

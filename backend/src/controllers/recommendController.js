@@ -6,6 +6,11 @@ export const getHybridRecommendations = async (req, res) => {
 	const limit = parseInt(req.query.limit) || 5;
 
 	try {
+		if (!req.user || !req.user.userId) {
+			console.error('Authentication error: No user ID found in request token.');
+			return res.status(401).json({ message: 'Authentication error: Invalid token.' });
+		}
+
 		console.log('Hybrid recommendation request for user:', req.user?.userId);
 		const user = await User.findById(req.user.userId);
 		if (!user) {

@@ -1,5 +1,5 @@
-import Plan from "../models/plan.js";
-import Place from "../models/place.js";
+import Plan from "../models/Plan.js";
+import Place from "../models/Place.js";
 import User from "../models/User.js";
 import similarity from "../utils/similarity.js";
 import { seedPlaces } from "./seedHelper.js";

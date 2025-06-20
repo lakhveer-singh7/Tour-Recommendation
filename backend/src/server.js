@@ -39,7 +39,7 @@ app.use(
 );
 app.use("/api/auth", authRouter);
 app.use("/api/plan", tourPlanRoute);
-app.use("/api/recommend", recommendRoute);
+// app.use("/api/recommend", recommendRoute);
 app.use("/api/recommend", recommendationRoute);
 app.use("/api/places", placesRoutes);
 app.use("/api/plan", planRoutes);

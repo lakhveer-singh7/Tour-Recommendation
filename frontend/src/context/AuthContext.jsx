@@ -11,11 +11,18 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     console.log("AuthContext: useEffect triggered for session check.");
     const checkUserSession = async () => {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      // Check both localStorage and sessionStorage for tokens
+      const localToken = localStorage.getItem('token');
+      const sessionToken = sessionStorage.getItem('token');
+      const token = localToken || sessionToken;
+      
+      console.log("AuthContext: Token check - localStorage:", !!localToken, "sessionStorage:", !!sessionToken);
       
       if (token) {
         try {
           const decodedToken = jwtDecode(token);
+          console.log("AuthContext: Token decoded successfully, exp:", new Date(decodedToken.exp * 1000));
+          
           if (decodedToken.exp * 1000 < Date.now()) {
             console.warn("AuthContext: Token expired. Logging out.");
             logout();
@@ -24,37 +31,45 @@ export function AuthProvider({ children }) {
 
           // Check if backend URL is available
           const backendUrl = process.env.REACT_APP_BACKEND_URL;
+          console.log("AuthContext: Backend URL available:", !!backendUrl);
+          
           if (!backendUrl) {
             console.warn("AuthContext: Backend URL not set. Using token data only.");
             // Use token data as fallback
-            setUser({
+            const userData = {
               email: decodedToken.email,
               name: decodedToken.name,
               id: decodedToken.id,
               preferences: decodedToken.preferences || {}
-            });
+            };
+            setUser(userData);
+            console.log("AuthContext: User set from token data:", userData.email);
             setLoading(false);
             return;
           }
 
           // Use the custom axios instance which has the correct base URL and auth interceptor
+          console.log("AuthContext: Attempting to fetch user profile from backend...");
           const response = await axios.get('/api/auth/profile');
           setUser(response.data);
           console.log("AuthContext: User profile fetched successfully:", response.data.email, "Preferences:", response.data.preferences);
         } catch (error) {
           console.error("AuthContext: Failed to fetch user profile or invalid token:", error.response?.data?.message || error.message);
+          console.error("AuthContext: Error details:", error.code, error.message);
           
           // If it's a network error (backend not available), try to use token data
-          if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+          if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error') || error.code === 'ECONNREFUSED') {
             console.warn("AuthContext: Network error, using token data as fallback.");
             try {
               const decodedToken = jwtDecode(token);
-              setUser({
+              const userData = {
                 email: decodedToken.email,
                 name: decodedToken.name,
                 id: decodedToken.id,
                 preferences: decodedToken.preferences || {}
-              });
+              };
+              setUser(userData);
+              console.log("AuthContext: User set from token data (network fallback):", userData.email);
               setLoading(false);
               return;
             } catch (decodeError) {
@@ -62,6 +77,7 @@ export function AuthProvider({ children }) {
               logout();
             }
           } else {
+            console.error("AuthContext: Non-network error, logging out");
             logout(); // Clear token if profile fetch fails or invalid
           }
         }
@@ -76,17 +92,18 @@ export function AuthProvider({ children }) {
   }, []); // Empty dependency array: runs only once on mount
 
   const login = async (userData, token, rememberMe) => {
+    console.log("AuthContext: Login called with rememberMe:", rememberMe, "token length:", token?.length);
+    
     if (token) {
-      if (rememberMe) {
-        localStorage.setItem('token', token);
-        console.log("AuthContext: Token saved to localStorage.");
-      } else {
-        sessionStorage.setItem('token', token);
-        console.log("AuthContext: Token saved to sessionStorage.");
-      }
+      // Always store in both places for redundancy
+      localStorage.setItem('token', token);
+      sessionStorage.setItem('token', token);
+      console.log("AuthContext: Token saved to both localStorage and sessionStorage.");
       
       // Check if backend URL is available
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      console.log("AuthContext: Backend URL available for login:", !!backendUrl);
+      
       if (!backendUrl) {
         console.warn("AuthContext: Backend URL not set. Using provided user data.");
         setUser(userData);
@@ -96,12 +113,14 @@ export function AuthProvider({ children }) {
       
       try {
         // Use the custom axios instance here as well
+        console.log("AuthContext: Attempting to fetch user profile after login...");
         const response = await axios.get('/api/auth/profile');
         setUser(response.data);
         console.log("AuthContext: User profile fetched after login:", response.data.email, "Preferences:", response.data.preferences);
         return;
       } catch (error) {
         console.error("AuthContext: Failed to fetch user profile after login:", error.message);
+        console.log("AuthContext: Using provided user data as fallback");
         setUser(userData); // fallback
         return;
       }
@@ -110,6 +129,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    console.log("AuthContext: Logout called");
     setUser(null);
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');

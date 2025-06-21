@@ -32,34 +32,53 @@ export const createPlan = async (req, res) => {
 			return res.status(400).json({ message: "Missing required fields: sourceLocation, selectedPlaces, and totalTime (must be a number) are required." });
 		}
 
-		// Ensure all places exist
-		const placeIds = selectedPlaces.map((p) => p.place);
-		const existingPlaces = await Place.find({ placeId: { $in: placeIds } });
-		if (existingPlaces.length !== placeIds.length) {
-			return res.status(404).json({ message: "One or more places not found" });
+		// Validate sourceLocation has lat and lng
+		if (!sourceLocation.lat || !sourceLocation.lng) {
+			return res.status(400).json({ message: "sourceLocation must have lat and lng coordinates." });
+		}
+
+		// Validate selectedPlaces is an array and has at least one place
+		if (!Array.isArray(selectedPlaces) || selectedPlaces.length === 0) {
+			return res.status(400).json({ message: "selectedPlaces must be a non-empty array." });
+		}
+
+		// Ensure all places exist (but don't fail if they don't - just log)
+		const placeIds = selectedPlaces.map((p) => p.place).filter(Boolean);
+		if (placeIds.length > 0) {
+			const existingPlaces = await Place.find({ placeId: { $in: placeIds } });
+			if (existingPlaces.length !== placeIds.length) {
+				console.warn("Some places not found in database:", placeIds.filter(id => !existingPlaces.find(p => p.placeId === id)));
+			}
 		}
 
 		// 🧠 TSP sorting if enabled
 		let sortedPlaces = selectedPlaces;
 		if (isSorted) {
-			sortedPlaces = await sortPlacesTSP(sourceLocation, selectedPlaces);
-			console.log("✅ Places sorted using TSP");
+			try {
+				sortedPlaces = await sortPlacesTSP(sourceLocation, selectedPlaces);
+				console.log("✅ Places sorted using TSP");
+			} catch (tspError) {
+				console.error("TSP sorting failed, using original order:", tspError);
+				sortedPlaces = selectedPlaces;
+			}
 		}
 
 		// Reverse-geocode state and city from sourceLocation
 		let savedLocation = { state: "Unknown", city: "Unknown" };
 		try {
-			const GOOGLE_KEY = process.env.GOOGLE_API_KEY;
-			const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
-			const { data } = await axios.get(GEOCODE_URL, {
-				params: { latlng: `${sourceLocation.lat},${sourceLocation.lng}`, key: GOOGLE_KEY },
-			});
-			const comps = data.results?.[0]?.address_components ?? [];
-			const stateObj = comps.find((c) => c.types.includes("administrative_area_level_1"));
-			const cityObj = comps.find((c) => c.types.includes("locality")) ||
-				comps.find((c) => c.types.includes("administrative_area_level_2"));
-			savedLocation.state = stateObj?.long_name || "Unknown";
-			savedLocation.city = cityObj?.long_name || "Unknown";
+			const GOOGLE_KEY = process.env.GOOGLE_MAPS_API_KEY;
+			if (GOOGLE_KEY) {
+				const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
+				const { data } = await axios.get(GEOCODE_URL, {
+					params: { latlng: `${sourceLocation.lat},${sourceLocation.lng}`, key: GOOGLE_KEY },
+				});
+				const comps = data.results?.[0]?.address_components ?? [];
+				const stateObj = comps.find((c) => c.types.includes("administrative_area_level_1"));
+				const cityObj = comps.find((c) => c.types.includes("locality")) ||
+					comps.find((c) => c.types.includes("administrative_area_level_2"));
+				savedLocation.state = stateObj?.long_name || "Unknown";
+				savedLocation.city = cityObj?.long_name || "Unknown";
+			}
 		} catch (e) {
 			console.error("🗺️ Geocode error (plan save):", e.response?.data?.error_message || e.message);
 		}
@@ -70,7 +89,7 @@ export const createPlan = async (req, res) => {
 			sourceLocation,
 			selectedPlaces: sortedPlaces, // includes name, address, etc.
 			totalTime,
-			isSorted: true,
+			isSorted: isSorted,
 			summary: req.body.summary || '',
 			savedLocation,
 		});
@@ -78,6 +97,7 @@ export const createPlan = async (req, res) => {
 		res.status(201).json({ message: "Plan saved successfully", plan });
 	} catch (err) {
 		console.error("❌ Failed to save plan:", err.message);
+		console.error("❌ Error details:", err);
 		res.status(500).json({ message: "Server error", error: err.message });
 	}
 };

@@ -19,38 +19,63 @@ const haversine = (a, b) => {
  * Sort places using Nearest Neighbor TSP
  */
 export const sortPlacesTSP = async (sourceLocation, selectedPlaces) => {
-	const places = await Place.find({
-		placeId: { $in: selectedPlaces.map((p) => p.place) },
-	});
+	try {
+		// Try to get places from database, but don't fail if not found
+		const placeIds = selectedPlaces.map((p) => p.place);
+		const places = await Place.find({
+			placeId: { $in: placeIds },
+		});
 
-	const unvisited = [...selectedPlaces];
-	const sorted = [];
+		const unvisited = [...selectedPlaces];
+		const sorted = [];
 
-	let current = sourceLocation.location;
+		let current = sourceLocation.location || sourceLocation;
 
-	while (unvisited.length > 0) {
-		let nearestIndex = -1;
-		let nearestDist = Infinity;
+		while (unvisited.length > 0) {
+			let nearestIndex = -1;
+			let nearestDist = Infinity;
 
-		for (let i = 0; i < unvisited.length; i++) {
-			const place = places.find((p) => p.placeId === unvisited[i].place);
-			if (!place || !place.location) continue;
-			const dist = haversine(current, place.location);
-			if (dist < nearestDist) {
-				nearestDist = dist;
-				nearestIndex = i;
+			for (let i = 0; i < unvisited.length; i++) {
+				const place = places.find((p) => p.placeId === unvisited[i].place);
+				let placeLocation;
+				
+				// Try to get location from database first, then from selectedPlaces
+				if (place && place.location) {
+					placeLocation = place.location;
+				} else if (unvisited[i].location) {
+					placeLocation = unvisited[i].location;
+				} else {
+					// Skip places without location data
+					continue;
+				}
+				
+				const dist = haversine(current, placeLocation);
+				if (dist < nearestDist) {
+					nearestDist = dist;
+					nearestIndex = i;
+				}
 			}
+
+			if (nearestIndex === -1) {
+				// If no valid place found, just add the remaining places in order
+				sorted.push(...unvisited);
+				break;
+			}
+
+			sorted.push(unvisited[nearestIndex]);
+			const nextPlace = places.find((p) => p.placeId === unvisited[nearestIndex].place);
+			if (nextPlace && nextPlace.location) {
+				current = nextPlace.location;
+			} else if (unvisited[nearestIndex].location) {
+				current = unvisited[nearestIndex].location;
+			}
+			unvisited.splice(nearestIndex, 1);
 		}
 
-		if (nearestIndex === -1) {
-			break;
-		}
-
-		sorted.push(unvisited[nearestIndex]);
-		const nextPlace = places.find((p) => p.placeId === unvisited[nearestIndex].place);
-		current = nextPlace.location;
-		unvisited.splice(nearestIndex, 1);
+		return sorted;
+	} catch (error) {
+		console.error("TSP sorting error:", error);
+		// Return original order if TSP fails
+		return selectedPlaces;
 	}
-
-	return sorted;
 };

@@ -44,7 +44,8 @@ export function AuthProvider({ children }) {
             };
             setUser(userData);
             console.log("AuthContext: User set from token data:", userData.email);
-            setLoading(false);
+            // Add a small delay to ensure state is properly set
+            setTimeout(() => setLoading(false), 100);
             return;
           }
 
@@ -53,6 +54,8 @@ export function AuthProvider({ children }) {
           const response = await axios.get('/api/auth/profile');
           setUser(response.data);
           console.log("AuthContext: User profile fetched successfully:", response.data.email, "Preferences:", response.data.preferences);
+          // Add a small delay to ensure state is properly set
+          setTimeout(() => setLoading(false), 100);
         } catch (error) {
           console.error("AuthContext: Failed to fetch user profile or invalid token:", error.response?.data?.message || error.message);
           console.error("AuthContext: Error details:", error.code, error.message);
@@ -70,7 +73,8 @@ export function AuthProvider({ children }) {
               };
               setUser(userData);
               console.log("AuthContext: User set from token data (network fallback):", userData.email);
-              setLoading(false);
+              // Add a small delay to ensure state is properly set
+              setTimeout(() => setLoading(false), 100);
               return;
             } catch (decodeError) {
               console.error("AuthContext: Failed to decode token:", decodeError);
@@ -84,8 +88,9 @@ export function AuthProvider({ children }) {
       } else {
         setUser(null);
         console.log("AuthContext: No token found. User not logged in.");
+        // Add a small delay to ensure state is properly set
+        setTimeout(() => setLoading(false), 100);
       }
-      setLoading(false); // Authentication check is complete
     };
 
     checkUserSession();

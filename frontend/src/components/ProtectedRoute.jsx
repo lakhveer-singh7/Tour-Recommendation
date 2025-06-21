@@ -19,6 +19,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (!user) {
     console.log("ProtectedRoute - User is null (auth check complete), redirecting to login from:", location.pathname);
+    console.log("ProtectedRoute - This should not happen if user is logged in!");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

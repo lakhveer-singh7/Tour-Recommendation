@@ -11,23 +11,30 @@ export const haversine = (a, b) => {
 
 export const tspGreedy = (arr) => {
 	if (arr.length <= 2) return arr;
-	const visited = new Set([arr[0].placeId]);
+	const visited = new Set([0]);
 	const route = [arr[0]];
 	let cur = arr[0];
+	let curIndex = 0;
+	
 	while (route.length < arr.length) {
 		let best,
+			bestIndex,
 			dist = Infinity;
-		for (const n of arr)
-			if (!visited.has(n.placeId)) {
+		for (let i = 0; i < arr.length; i++) {
+			if (!visited.has(i)) {
+				const n = arr[i];
 				const d = haversine(cur.location, n.location);
 				if (d < dist) {
 					dist = d;
 					best = n;
+					bestIndex = i;
 				}
 			}
+		}
 		route.push(best);
-		visited.add(best.placeId);
+		visited.add(bestIndex);
 		cur = best;
+		curIndex = bestIndex;
 	}
 	return route;
 };

@@ -16,7 +16,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Recommendation from './pages/Recommendation';
 import CompleteProfile from './pages/CompleteProfile';
 import Profile from './pages/Profile';
-import AuthDebug from './components/AuthDebug';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useAuth } from './context/AuthContext';
 
@@ -58,7 +57,6 @@ function AppContent() {
   return (
     <>
       {showNavbar && <Navbar />}
-      <AuthDebug />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard" element={

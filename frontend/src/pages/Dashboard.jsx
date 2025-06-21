@@ -175,12 +175,12 @@ const Dashboard = () => {
             </p>
           </div>
           <div className="mt-4 md:mt-0 flex items-center space-x-4">
-            <a
-              href="/plan-tour"
+            <Link
+              to="/plan-tour"
               className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-lg hover:from-blue-700 hover:to-purple-700 transition-colors text-lg font-bold tracking-wide"
             >
               + Plan a New Tour
-            </a>
+            </Link>
           </div>
         </motion.div>
 

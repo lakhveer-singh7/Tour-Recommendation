@@ -1,17 +1,17 @@
 {
   "rewrites": [
     {
-      "source": "**",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "**/*.@(js|css)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "max-age=31536000"
+          "value": "public, max-age=0, must-revalidate"
         }
       ]
     }

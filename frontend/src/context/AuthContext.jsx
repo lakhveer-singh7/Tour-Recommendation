@@ -22,13 +22,48 @@ export function AuthProvider({ children }) {
             return; // Exit after logout, which sets loading to false
           }
 
+          // Check if backend URL is available
+          const backendUrl = process.env.REACT_APP_BACKEND_URL;
+          if (!backendUrl) {
+            console.warn("AuthContext: Backend URL not set. Using token data only.");
+            // Use token data as fallback
+            setUser({
+              email: decodedToken.email,
+              name: decodedToken.name,
+              id: decodedToken.id,
+              preferences: decodedToken.preferences || {}
+            });
+            setLoading(false);
+            return;
+          }
+
           // Use the custom axios instance which has the correct base URL and auth interceptor
           const response = await axios.get('/api/auth/profile');
           setUser(response.data);
           console.log("AuthContext: User profile fetched successfully:", response.data.email, "Preferences:", response.data.preferences);
         } catch (error) {
           console.error("AuthContext: Failed to fetch user profile or invalid token:", error.response?.data?.message || error.message);
-          logout(); // Clear token if profile fetch fails or invalid
+          
+          // If it's a network error (backend not available), try to use token data
+          if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+            console.warn("AuthContext: Network error, using token data as fallback.");
+            try {
+              const decodedToken = jwtDecode(token);
+              setUser({
+                email: decodedToken.email,
+                name: decodedToken.name,
+                id: decodedToken.id,
+                preferences: decodedToken.preferences || {}
+              });
+              setLoading(false);
+              return;
+            } catch (decodeError) {
+              console.error("AuthContext: Failed to decode token:", decodeError);
+              logout();
+            }
+          } else {
+            logout(); // Clear token if profile fetch fails or invalid
+          }
         }
       } else {
         setUser(null);
@@ -49,6 +84,16 @@ export function AuthProvider({ children }) {
         sessionStorage.setItem('token', token);
         console.log("AuthContext: Token saved to sessionStorage.");
       }
+      
+      // Check if backend URL is available
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      if (!backendUrl) {
+        console.warn("AuthContext: Backend URL not set. Using provided user data.");
+        setUser(userData);
+        setLoading(false);
+        return;
+      }
+      
       try {
         // Use the custom axios instance here as well
         const response = await axios.get('/api/auth/profile');
@@ -56,8 +101,8 @@ export function AuthProvider({ children }) {
         console.log("AuthContext: User profile fetched after login:", response.data.email, "Preferences:", response.data.preferences);
         return;
       } catch (error) {
-        setUser(userData); // fallback
         console.error("AuthContext: Failed to fetch user profile after login:", error.message);
+        setUser(userData); // fallback
         return;
       }
     }

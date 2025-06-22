@@ -81,6 +81,24 @@ const Navbar = () => {
           body { padding-left: 16rem !important; }
         }
       `}</style>
+
+      {/* DEBUG: Minimal always-visible FAB for mobile */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          zIndex: 9999,
+          background: 'red',
+          color: 'white',
+          padding: 10,
+          borderRadius: 50,
+          display: 'block',
+        }}
+        className="md:hidden"
+      >
+        TEST FAB
+      </div>
     </>
   );
 };

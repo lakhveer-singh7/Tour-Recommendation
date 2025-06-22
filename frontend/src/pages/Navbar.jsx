@@ -17,81 +17,51 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-white shadow-lg fixed w-full z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
-          <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
-            <img src="/logo192.png" alt="TourRec Logo" className="h-10 w-10 rounded-full" />
-            <span className="text-2xl font-bold text-gray-800">TourRec</span>
-          </Link>
-          {/* Hamburger for mobile/zoomed */}
-          <div className="flex md:hidden">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-gray-800 focus:outline-none"
-              aria-label="Toggle menu"
-            >
-              <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {sidebarOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                )}
-              </svg>
-            </button>
-          </div>
-          {/* Links for desktop */}
-          <div className="hidden md:flex space-x-4 items-center">
-            {navLinks.map(link => (
-              <Link key={link.to} to={link.to} className="text-gray-700 hover:text-blue-600 font-medium">
-                {link.label}
-              </Link>
-            ))}
-            <button
-              onClick={() => { logout(); window.location.href = '/login'; }}
-              className="ml-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Logout
-            </button>
-          </div>
+    <>
+      {/* Sidebar for all screen sizes */}
+      <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 flex flex-col p-6 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}>
+        <div className="flex items-center mb-8">
+          <img src="/logo192.png" alt="TourRec Logo" className="h-10 w-10 rounded-full mr-2" />
+          <span className="text-2xl font-bold text-gray-800">TourRec</span>
         </div>
-        {/* Sidebar for mobile/zoomed */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex">
-            <div className="w-64 bg-white h-full shadow-lg flex flex-col p-6">
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="self-end mb-4 text-gray-700"
-                aria-label="Close menu"
-              >
-                <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-              {navLinks.map(link => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="block text-gray-700 px-3 py-2 rounded hover:bg-blue-100"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <button
-                onClick={() => { setSidebarOpen(false); logout(); window.location.href = '/login'; }}
-                className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Logout
-              </button>
-            </div>
-            {/* Click outside to close */}
-            <div className="flex-1" onClick={() => setSidebarOpen(false)} />
-          </div>
-        )}
+        <nav className="flex-1 flex flex-col gap-2">
+          {navLinks.map(link => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="text-gray-700 hover:text-blue-600 font-medium px-3 py-2 rounded hover:bg-blue-100"
+              onClick={() => setSidebarOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+        <button
+          onClick={() => { logout(); window.location.href = '/login'; }}
+          className="mt-8 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+        >
+          Logout
+        </button>
       </div>
-    </nav>
+      {/* Hamburger for mobile only */}
+      <button
+        className="fixed top-4 left-4 z-60 md:hidden bg-white p-2 rounded shadow-lg"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle sidebar"
+      >
+        <svg className="h-8 w-8 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {sidebarOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+          )}
+        </svg>
+      </button>
+      {/* Overlay for mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+    </>
   );
 };
 

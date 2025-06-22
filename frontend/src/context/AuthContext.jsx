@@ -27,16 +27,8 @@ export function AuthProvider({ children }) {
           setUser(response.data);
           console.log("AuthContext: User profile fetched successfully:", response.data.email, "Preferences:", response.data.preferences);
         } catch (error) {
-          // Only log out if error is 401/403 (unauthorized/forbidden), not for network errors
-          const status = error.response?.status;
-          if (status === 401 || status === 403) {
-            console.error("AuthContext: Invalid/expired token, logging out.");
-            logout();
-          } else {
-            // Network or other error: keep user, but show warning
-            setUser(null);
-            console.error("AuthContext: Network or unknown error during profile fetch:", error.message);
-          }
+          console.error("AuthContext: Failed to fetch user profile or invalid token:", error.response?.data?.message || error.message);
+          logout(); // Clear token if profile fetch fails or invalid
         }
       } else {
         setUser(null);

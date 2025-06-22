@@ -17,7 +17,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, user } = useAuth();
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,7 +26,7 @@ const Login = () => {
   console.log("Login Component Render - Email:", email, "Password:", password, "Errors:", errors, "isSubmitting:", isSubmitting, "Auth User:", user);
 
   useEffect(() => {
-    if (user) {
+    if (!loading && user) {
       console.log("User already logged in. Redirecting to dashboard.");
       navigate(from, { replace: true });
     }
@@ -40,7 +40,7 @@ const Login = () => {
     }
     setErrors(newErrors);
     console.log("Validation useEffect - newErrors:", newErrors);
-  }, [email, password, user, navigate, from]);
+  }, [email, password, user, loading, navigate, from]);
 
   const { mutate: loginMutation, error: apiError } = useMutation({
     mutationFn: loginUser,

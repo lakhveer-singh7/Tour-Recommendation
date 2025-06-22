@@ -7,6 +7,8 @@ const PlanSchema = new mongoose.Schema(
 		selectedPlaces: [
 			{
 				place: { type: String, ref: "Place" }, // placeId ref
+				name: String,
+				address: String,
 				cost: Number,
 				duration: Number,
 				legTravelSec: Number,

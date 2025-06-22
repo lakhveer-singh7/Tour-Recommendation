@@ -3,7 +3,7 @@ export const getRecommendations = async (preferences) => {
 };
 
 export const optimizeTourRoute = async (routeData) => {
-  const response = await fetch('/api/planner/optimize', {
+  const response = await fetch('/api/tour-plan/optimize', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(routeData)

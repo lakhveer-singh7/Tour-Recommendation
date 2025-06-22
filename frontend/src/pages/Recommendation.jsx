@@ -114,7 +114,7 @@ const Recommendation = () => {
     setError(null);
     setInfoMessage("");
     try {
-      const response = await axios.post('/api/plan/optimize', {
+      const response = await axios.post('/api/tour-plan/optimize', {
         origin: userLocation,
         destinations: selectedPlaces,
         optimize: shouldSort

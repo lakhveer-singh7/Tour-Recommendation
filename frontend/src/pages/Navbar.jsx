@@ -1,66 +1,86 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { FiHome, FiMap, FiHeart, FiStar, FiGlobe, FiEdit, FiSettings, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+
+const navLinks = [
+  { to: '/dashboard', label: 'Dashboard', icon: <FiHome /> },
+  { to: '/explore', label: 'Explore', icon: <FiMap /> },
+  { to: '/saved-tours', label: 'Saved Tours', icon: <FiHeart /> },
+  { to: '/recommendation', label: 'Recommendation', icon: <FiStar /> },
+  { to: '/destinations', label: 'Destinations', icon: <FiGlobe /> },
+  { to: '/plan-tour', label: 'Plan Your Tour', icon: <FiEdit /> },
+  { to: '/preference', label: 'Preferences', icon: <FiSettings /> },
+];
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
 
-  const navLinks = [
-    { to: '/dashboard', label: 'Dashboard' },
-    { to: '/explore', label: 'Explore' },
-    { to: '/saved-tours', label: 'Saved Tours' },
-    { to: '/recommendation', label: 'Recommendation' },
-    { to: '/destinations', label: 'Destinations' },
-    { to: '/plan-tour', label: 'Plan Your Tour' },
-    { to: '/preference', label: 'Preferences' },
-  ];
+  // Close sidebar on navigation (mobile only)
+  React.useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   return (
     <>
-      {/* Sidebar for all screen sizes */}
-      <div className={`fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 flex flex-col p-6 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}>
-        <div className="flex items-center mb-8">
-          <img src="/logo192.png" alt="TourRec Logo" className="h-10 w-10 rounded-full mr-2" />
-          <span className="text-2xl font-bold text-gray-800">TourRec</span>
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-blue-700 to-blue-900 shadow-2xl z-50 flex flex-col p-6 transition-transform duration-300
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0 md:static md:block md:w-64`}
+        style={{ minWidth: '16rem' }}
+      >
+        {/* Logo */}
+        <div className="flex items-center mb-10">
+          <img src="/logo192.png" alt="TourRec Logo" className="h-12 w-12 rounded-full mr-3 shadow-lg border-2 border-white" />
+          <span className="text-3xl font-extrabold text-white tracking-tight drop-shadow">TourRec</span>
         </div>
+        {/* Nav Links */}
         <nav className="flex-1 flex flex-col gap-2">
           {navLinks.map(link => (
             <Link
               key={link.to}
               to={link.to}
-              className="text-gray-700 hover:text-blue-600 font-medium px-3 py-2 rounded hover:bg-blue-100"
-              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-lg font-medium transition-colors
+                ${location.pathname === link.to ? 'bg-blue-500 text-white shadow' : 'text-blue-100 hover:bg-blue-800 hover:text-white'}`}
             >
+              <span className="text-2xl">{link.icon}</span>
               {link.label}
             </Link>
           ))}
         </nav>
+        {/* Logout Button */}
         <button
           onClick={() => { logout(); window.location.href = '/login'; }}
-          className="mt-8 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
+          className="mt-10 flex items-center gap-3 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-lg font-semibold shadow transition-colors w-full"
         >
-          Logout
+          <FiLogOut className="text-2xl" /> Logout
         </button>
-      </div>
-      {/* Hamburger for mobile only */}
+      </aside>
+
+      {/* FAB for mobile sidebar toggle */}
       <button
-        className="fixed top-4 left-4 z-60 md:hidden bg-white p-2 rounded shadow-lg"
+        className={`fixed bottom-6 right-6 z-60 md:hidden bg-blue-700 hover:bg-blue-800 text-white p-4 rounded-full shadow-2xl transition-transform duration-300 ${sidebarOpen ? 'scale-90' : 'scale-100'}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        aria-label="Toggle sidebar"
+        aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+        style={{ boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)' }}
       >
-        <svg className="h-8 w-8 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {sidebarOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-          )}
-        </svg>
+        {sidebarOpen ? <FiX className="h-8 w-8" /> : <FiMenu className="h-8 w-8" />}
       </button>
+
       {/* Overlay for mobile when sidebar is open */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden transition-opacity duration-300" onClick={() => setSidebarOpen(false)} />
       )}
+
+      {/* Main content shift for desktop */}
+      <style>{`
+        @media (min-width: 768px) {
+          body { padding-left: 16rem !important; }
+        }
+      `}</style>
     </>
   );
 };

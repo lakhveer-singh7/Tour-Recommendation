@@ -42,6 +42,14 @@ const Login = () => {
     console.log("Validation useEffect - newErrors:", newErrors);
   }, [email, password, user, loading, navigate, from]);
 
+  // Clear tokens if on login page to ensure clean state
+  useEffect(() => {
+    if (window.location.pathname === '/login') {
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+    }
+  }, []);
+
   const { mutate: loginMutation, error: apiError } = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {

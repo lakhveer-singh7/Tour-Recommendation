@@ -58,31 +58,14 @@ export function AuthProvider({ children }) {
           setTimeout(() => setLoading(false), 100);
         } catch (error) {
           console.error("AuthContext: Failed to fetch user profile or invalid token:", error.response?.data?.message || error.message);
-          console.error("AuthContext: Error details:", error.code, error.message);
-          
-          // If it's a network error (backend not available), try to use token data
-          if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error') || error.code === 'ECONNREFUSED') {
-            console.warn("AuthContext: Network error, using token data as fallback.");
-            try {
-              const decodedToken = jwtDecode(token);
-              const userData = {
-                email: decodedToken.email,
-                name: decodedToken.name,
-                id: decodedToken.id,
-                preferences: decodedToken.preferences || {}
-              };
-              setUser(userData);
-              console.log("AuthContext: User set from token data (network fallback):", userData.email);
-              // Add a small delay to ensure state is properly set
-              setTimeout(() => setLoading(false), 100);
-              return;
-            } catch (decodeError) {
-              console.error("AuthContext: Failed to decode token:", decodeError);
-              logout();
-            }
+          const status = error.response?.status;
+          if (status === 401 || status === 403) {
+            console.error("AuthContext: Invalid/expired token, logging out.");
+            logout();
           } else {
-            console.error("AuthContext: Non-network error, logging out");
-            logout(); // Clear token if profile fetch fails or invalid
+            // Network or other error: keep user, but show warning
+            setUser(null);
+            console.error("AuthContext: Network or unknown error during profile fetch:", error.message);
           }
         }
       } else {

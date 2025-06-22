@@ -33,6 +33,8 @@ const Explore = () => {
   const [currentLatLng, setCurrentLatLng] = useState(null);
   const [geolocationError, setGeolocationError] = useState(null);
   const [locationAccuracy, setLocationAccuracy] = useState(null);
+  const [manualLocation, setManualLocation] = useState({ lat: '', lng: '' });
+  const [showManualLocation, setShowManualLocation] = useState(false);
 
   const [radius, setRadius] = useState(50000); 
 
@@ -218,7 +220,27 @@ const Explore = () => {
 
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 pt-20">
-      {/* Removed: Hidden div for PlacesService initialization */}
+      {/* Location accuracy info */}
+      <div className="mb-4 text-center text-sm text-blue-700 bg-blue-50 p-2 rounded">
+        <span>
+          Location accuracy may be lower on laptops/desktops. For best results, use a mobile device with GPS or connect your laptop to WiFi.<br/>
+          If your location is not accurate, <button onClick={() => setShowManualLocation(v => !v)} className="underline text-blue-800">click here to enter it manually</button>.
+        </span>
+      </div>
+      {showManualLocation && (
+        <div className="mb-4 flex flex-col items-center">
+          <div className="flex gap-2">
+            <input type="number" step="any" placeholder="Latitude" value={manualLocation.lat} onChange={e => setManualLocation({ ...manualLocation, lat: e.target.value })} className="border p-1 rounded" />
+            <input type="number" step="any" placeholder="Longitude" value={manualLocation.lng} onChange={e => setManualLocation({ ...manualLocation, lng: e.target.value })} className="border p-1 rounded" />
+            <button onClick={() => {
+              if (manualLocation.lat && manualLocation.lng) {
+                setCurrentLatLng({ lat: parseFloat(manualLocation.lat), lng: parseFloat(manualLocation.lng) });
+                setShowManualLocation(false);
+              }
+            }} className="bg-blue-600 text-white px-3 py-1 rounded">Set Location</button>
+          </div>
+        </div>
+      )}
 
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">

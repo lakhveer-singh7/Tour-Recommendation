@@ -13,9 +13,10 @@ const GoogleLoginButton = () => {
     try {
       // First verify the token with our backend
       const response = await verifyGoogleToken(credentialResponse.credential);
-      
-      // If verification successful, login the user
-      if (response.user && response.token) {
+      // If verification successful, handle new or existing user
+      if (response.isNewUser && response.userData) {
+        navigate('/complete-profile', { state: { userData: response.userData } });
+      } else if (response.user && response.token) {
         login(response.user, response.token, true);
         navigate('/dashboard');
       }

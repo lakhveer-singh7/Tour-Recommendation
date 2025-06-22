@@ -49,7 +49,7 @@ const Navbar = () => {
               </Link>
             ))}
             <button
-              onClick={logout}
+              onClick={() => { logout(); window.location.href = '/login'; }}
               className="ml-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Logout
@@ -80,7 +80,7 @@ const Navbar = () => {
                 </Link>
               ))}
               <button
-                onClick={() => { setSidebarOpen(false); logout(); }}
+                onClick={() => { setSidebarOpen(false); logout(); window.location.href = '/login'; }}
                 className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Logout

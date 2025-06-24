@@ -106,7 +106,7 @@ The frontend will be running at `http://localhost:3000`
 
 -   **Smart User Management**: Sign up with email or Google account
 -   **Discover Places**: Search and explore tourist destinations
--   **Get Recommendations**: AI-powered suggestions based on your preferences
+-   **Get Recommendations**: Personal suggestions based on your preferences
 -   **Plan Perfect Trips**: Create optimized itineraries with route planning
 -   **Interactive Maps**: See all your places and routes on beautiful maps
 -   **Track Everything**: Keep track of your tours, preferences, and recommendations
